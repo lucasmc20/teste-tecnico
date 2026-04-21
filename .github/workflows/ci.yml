@@ -23,7 +23,7 @@ jobs:
           cache-dependency-path: back-end/package-lock.json
 
       - name: Instalar dependências
-        run: npm install --include=dev
+        run: npm ci
 
       - name: Type-check
         run: npm run lint
@@ -54,7 +54,7 @@ jobs:
           cache-dependency-path: front-end/package-lock.json
 
       - name: Instalar dependências
-        run: npm install --include=dev
+        run: npm ci
 
       - name: Type-check
         run: npm run typecheck
@@ -76,11 +76,11 @@ jobs:
 
       - name: Instalar dependências do back-end
         working-directory: back-end
-        run: npm install --include=dev
+        run: npm ci
 
       - name: Instalar dependências do front-end
         working-directory: front-end
-        run: npm install --include=dev
+        run: npm ci
 
       - name: Instalar Playwright browsers
         working-directory: front-end
