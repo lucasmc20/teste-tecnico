@@ -21,7 +21,7 @@ describe('Items HTTP', () => {
   it('POST /auth/login retorna token com credenciais corretas', async () => {
     const res = await request(app)
       .post('/auth/login')
-      .send({ username: 'admin', password: 'admin' });
+      .send({ username: process.env.ADMIN_USER ?? 'admin', password: process.env.ADMIN_PASS ?? 'admin' });
     expect(res.status).toBe(200);
     expect(typeof res.body.data.token).toBe('string');
   });
