@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: teste-tecnico-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./back-end
+    container_name: teste-tecnico-backend
+    environment:
+      PORT: 3333
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-troque-em-producao}
+      ADMIN_USER: ${ADMIN_USER:-admin_local}
+      ADMIN_PASS: ${ADMIN_PASS:-secret}
+    ports:
+      - "3333:3333"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./front-end
+    container_name: teste-tecnico-frontend
+    environment:
+      API_URL: http://backend:3333
+      NEXT_PUBLIC_API_URL: http://localhost:3333
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+
