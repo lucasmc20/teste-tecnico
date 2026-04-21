@@ -78,6 +78,10 @@ jobs:
         working-directory: back-end
         run: npm ci
 
+      - name: Build back-end
+        working-directory: back-end
+        run: npm run build
+
       - name: Instalar dependências do front-end
         working-directory: front-end
         run: npm ci
