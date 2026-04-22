@@ -106,8 +106,6 @@ export function ItemsPanel({ initialItems = [] }: ItemsPanelProps) {
         />
       )}
 
-      {loginModalOpen && <LoginModal onClose={() => setLoginModalOpen(false)} />}
-
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
         <div className="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -204,6 +202,8 @@ export function ItemsPanel({ initialItems = [] }: ItemsPanelProps) {
           )}
         </>
       )}
+
+      {loginModalOpen && <LoginModal onClose={() => setLoginModalOpen(false)} />}
     </section>
   );
 }
