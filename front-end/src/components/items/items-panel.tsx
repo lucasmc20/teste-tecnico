@@ -17,6 +17,7 @@ import type { Item, ItemInput } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { LoginModal } from '@/components/auth/login-modal';
 
 interface ItemsPanelProps {
   initialItems?: Item[];
@@ -44,6 +45,7 @@ export function ItemsPanel({ initialItems = [] }: ItemsPanelProps) {
   const search = useDebounce(searchInput, 400);
   const [page, setPage] = useState(1);
   const [confirmDelete, setConfirmDelete] = useState<Item | null>(null);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useItems({
     initialData: initialItems,
@@ -104,28 +106,38 @@ export function ItemsPanel({ initialItems = [] }: ItemsPanelProps) {
         />
       )}
 
+      {loginModalOpen && <LoginModal onClose={() => setLoginModalOpen(false)} />}
+
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
         <div className="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Gestão de itens</h2>
-            <p className="text-sm text-slate-500">Usuário conectado: {username}</p>
+            {token && <p className="text-sm text-slate-500">Usuário conectado: {username}</p>}
           </div>
-          <Button variant="ghost" size="sm" onClick={logout}>
-            Sair
-          </Button>
+          {token ? (
+            <Button variant="ghost" size="sm" onClick={logout}>
+              Sair
+            </Button>
+          ) : (
+            <Button variant="secondary" size="sm" onClick={() => setLoginModalOpen(true)}>
+              Entrar
+            </Button>
+          )}
         </div>
 
-        <ItemForm
-          initialValue={editing}
-          submitting={editing ? updateMutation.isPending : createMutation.isPending}
-          onSubmit={editing ? handleUpdate : handleCreate}
-          onCancel={editing ? () => setEditing(null) : undefined}
-        />
+        {token && (
+          <ItemForm
+            initialValue={editing}
+            submitting={editing ? updateMutation.isPending : createMutation.isPending}
+            onSubmit={editing ? handleUpdate : handleCreate}
+            onCancel={editing ? () => setEditing(null) : undefined}
+          />
+        )}
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-base font-semibold text-slate-900">Catálogo de itens</h3>
+          <h3 className="text-base font-semibold text-slate-900">Itens cadastrados</h3>
           <p className="text-xs text-slate-500">
             {total} {total === 1 ? 'item' : 'itens'}{search ? ` · filtrado por "${search}"` : ''}
           </p>

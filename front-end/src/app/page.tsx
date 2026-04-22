@@ -1,30 +1,6 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { ItemsPanel } from '@/components/items/items-panel';
-import { useAuth } from '@/providers/auth-provider';
 
 export default function HomePage() {
-  const { token } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!token) {
-      router.replace('/login?next=/');
-    }
-  }, [router, token]);
-
-  if (!token) {
-    return (
-      <main className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-12">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-          Carregando sessão...
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 md:py-10">
       <header className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
