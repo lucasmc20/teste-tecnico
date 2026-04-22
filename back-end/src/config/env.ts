@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 const parseNumber = (value: string | undefined, fallback: number): number => {
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  return Number.isFinite(parsed) && parsed > 0 && parsed <= 65535 ? parsed : fallback;
 };
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
@@ -26,7 +26,7 @@ if (nodeEnv === 'production') {
 export const env = {
   nodeEnv,
   port: parseNumber(process.env.PORT, 3333),
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+  corsOrigin: process.env.CORS_ORIGIN ?? process.env.URL ?? 'http://localhost:3000',
   jwtSecret,
   adminUser,
   adminPass,

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { createHmac } from 'node:crypto';
 import { env } from '../../config/env.js';
 import { UnauthorizedError } from '../../errors/app-error.js';
+import { authService } from './auth.service.js';
 
 // Verifica JWT HS256 manualmente para não adicionar dependência de runtime.
 // Para produção, considere a lib `jsonwebtoken`.
@@ -41,9 +42,18 @@ export const requireAuth = (req: Request, _res: Response, next: NextFunction) =>
   }
 
   try {
-    const { exp } = JSON.parse(Buffer.from(payload, 'base64').toString());
+    const parsed = JSON.parse(Buffer.from(payload, 'base64').toString()) as {
+      exp?: number;
+      sub?: string;
+    };
+    const { exp, sub } = parsed;
+
     if (exp && Date.now() / 1000 > exp) {
       return next(new UnauthorizedError('Token expirado'));
+    }
+
+    if (!sub || !authService.exists(sub)) {
+      return next(new UnauthorizedError('Token inválido para usuário informado'));
     }
   } catch {
     return next(new UnauthorizedError('Token malformado'));

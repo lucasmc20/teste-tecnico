@@ -28,3 +28,9 @@ export class UnauthorizedError extends AppError {
     super(message, 401);
   }
 }
+
+export class TooManyRequestsError extends AppError {
+  constructor(message = 'Muitas tentativas. Tente novamente em instantes.') {
+    super(message, 429);
+  }
+}

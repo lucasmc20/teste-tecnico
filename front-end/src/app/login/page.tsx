@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { safeRedirectPath } from '@/lib/navigation';
 
 interface CredentialsForm {
   username: string;
@@ -22,7 +23,7 @@ function LoginPageContent() {
   const { notify } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/';
+  const next = safeRedirectPath(searchParams.get('next'));
 
   useEffect(() => {
     if (token) {

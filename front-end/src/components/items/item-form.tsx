@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Field, Input, Textarea } from '@/components/ui/field';
+import { Field, Textarea } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { itemSchema, ItemFormValues } from '@/lib/schemas';
 import type { Item, ItemInput } from '@/lib/types';
 

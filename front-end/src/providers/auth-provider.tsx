@@ -23,6 +23,33 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 const TOKEN_KEY = 'auth_token';
 const USERNAME_KEY = 'auth_username';
 
+const base64UrlDecode = (value: string): string => {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padLength = (4 - (padded.length % 4)) % 4;
+  return atob(`${padded}${'='.repeat(padLength)}`);
+};
+
+const isExpiredToken = (token: string): boolean => {
+  try {
+    const [, payload] = token.split('.');
+    if (!payload) return true;
+    const parsed = JSON.parse(base64UrlDecode(payload)) as { exp?: number };
+    if (!parsed.exp) return false;
+    return Date.now() / 1000 >= parsed.exp;
+  } catch {
+    return true;
+  }
+};
+
+const parseAuthError = async (res: Response, fallback: string) => {
+  try {
+    const payload = (await res.json()) as { message?: string };
+    return payload.message ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 interface AuthResponse {
   data: {
     token: string;
@@ -34,10 +61,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Token persiste apenas na sessão atual do navegador.
   const [token, setToken] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
-    return sessionStorage.getItem(TOKEN_KEY);
+    const stored = sessionStorage.getItem(TOKEN_KEY);
+    if (!stored) return null;
+    if (isExpiredToken(stored)) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(USERNAME_KEY);
+      return null;
+    }
+    return stored;
   });
   const [username, setUsername] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
+    const tokenStored = sessionStorage.getItem(TOKEN_KEY);
+    if (!tokenStored || isExpiredToken(tokenStored)) return null;
     return sessionStorage.getItem(USERNAME_KEY);
   });
 
@@ -54,7 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
-    if (!res.ok) throw new Error('Credenciais inválidas');
+    if (!res.ok) {
+      throw new Error(await parseAuthError(res, 'Credenciais inválidas'));
+    }
     const { data } = (await res.json()) as AuthResponse;
     persistAuth(data.token, data.username);
   }, [persistAuth]);
@@ -67,8 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res.ok) {
-      const payload = (await res.json().catch(() => ({}))) as { message?: string };
-      throw new Error(payload.message ?? 'Não foi possível cadastrar');
+      throw new Error(await parseAuthError(res, 'Não foi possível cadastrar'));
     }
 
     const { data } = (await res.json()) as AuthResponse;

@@ -1,5 +1,6 @@
 import { ValidationError } from '../../errors/app-error.js';
 import { env } from '../../config/env.js';
+import bcrypt from 'bcryptjs';
 
 interface Credentials {
   username: string;
@@ -10,12 +11,17 @@ class AuthService {
   private readonly users = new Map<string, string>();
 
   constructor() {
-    this.users.set(env.adminUser, env.adminPass);
+    this.users.set(env.adminUser, bcrypt.hashSync(env.adminPass, 10));
   }
 
   validate({ username, password }: Credentials): boolean {
-    const expected = this.users.get(username);
-    return typeof expected === 'string' && expected === password;
+    const expectedHash = this.users.get(username);
+    if (!expectedHash) return false;
+    return bcrypt.compareSync(password, expectedHash);
+  }
+
+  exists(username: string): boolean {
+    return this.users.has(username);
   }
 
   register({ username, password }: Credentials): void {
@@ -24,7 +30,7 @@ class AuthService {
         { path: 'username', message: 'Este usuário já existe' },
       ]);
     }
-    this.users.set(username, password);
+    this.users.set(username, bcrypt.hashSync(password, 10));
   }
 }
 

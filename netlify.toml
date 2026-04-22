@@ -1,0 +1,20 @@
+[build]
+base = "front-end"
+command = "npm install && npm --prefix ../back-end install && npm --prefix ../back-end run build:netlify && npm run build"
+
+[build.environment]
+NODE_VERSION = "20"
+
+[functions]
+directory = "../back-end/netlify/functions"
+node_bundler = "esbuild"
+included_files = ["../back-end/dist-netlify/**"]
+
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/api/:splat"
+status = 200
+force = true
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"

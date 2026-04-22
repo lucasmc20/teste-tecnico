@@ -8,7 +8,7 @@ const app = buildApp();
 let token: string;
 
 beforeAll(() => {
-  token = createToken('admin');
+  token = createToken(process.env.ADMIN_USER ?? 'admin');
 });
 
 describe('Items HTTP', () => {

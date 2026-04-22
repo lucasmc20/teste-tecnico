@@ -53,7 +53,29 @@ Usuário inicial no `docker-compose.yml`:
 - usuário: `admin_local`
 - senha: `secret`
 
-Também é possível criar novos usuários na tela `/login` (aba `Cadastrar`).
+Também é possível criar novos usuários pela rota `/register`.
+
+## Deploy no Netlify (Front + Back no mesmo site)
+
+Este repositório já está preparado para subir em um único site Netlify:
+
+- Front-end Next.js (App Router)
+- Back-end Express rodando em Netlify Function (`/api/*`)
+
+Arquivo de configuração: `netlify.toml` (na raiz).
+
+### Como configurar no painel do Netlify
+
+1. Importe o repositório normalmente.
+2. Não altere Build command/Publish directory manualmente (o `netlify.toml` já define).
+3. Garanta Node 20 (já definido em `netlify.toml`).
+4. Configure variáveis de ambiente do back-end:
+  - `JWT_SECRET`
+  - `ADMIN_USER`
+  - `ADMIN_PASS`
+  - `DATABASE_URL` (obrigatório em produção)
+
+Com isso, deploys seguintes ficam automáticos a cada push.
 
 ## Testes
 
@@ -80,6 +102,8 @@ cd front-end && npm test     # Vitest + Testing Library (formulário)
 - **Error handler central** + `asyncHandler` eliminam `try/catch` repetitivo.
   Retornos padronizados: `422` para validação, `404` para não encontrado,
   `500` genérico só para o inesperado (sem vazar stacktrace em produção).
+- Senhas de usuários são armazenadas com hash (`bcryptjs`) e os endpoints de
+  autenticação possuem rate-limit básico para mitigar brute force.
 - **Testes**: unidade (service) e HTTP (Supertest) cobrindo o fluxo completo
   e os caminhos de erro.
 
@@ -129,11 +153,3 @@ cp back-end/.env.example back-end/.env
 # Sobe tudo (Postgres, back-end, front-end)
 docker compose up --build
 ```
-
-### Deploy sugerido
-
-- **Front-end**: Vercel (recomendado) ou Netlify.
-  - Vercel: root directory `front-end`, variável `NEXT_PUBLIC_API_URL` apontando para a URL pública do backend.
-  - Netlify: também usar root directory `front-end` e definir `NEXT_PUBLIC_API_URL`.
-  - Para SSR interno do Next, definir também `API_URL` com a URL pública do backend.
-- **Back-end**: Fly.io ou Render — configure `DATABASE_URL`, `JWT_SECRET`, `ADMIN_USER`, `ADMIN_PASS`.

@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, TextareaHTMLAttributes, forwardRef } from 'react';
+import { TextareaHTMLAttributes, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Label } from './label';
 
@@ -25,20 +25,6 @@ export function Field({ label, htmlFor, error, hint, children }: FieldWrapperPro
     </div>
   );
 }
-
-export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  ({ className = '', ...props }, ref) => (
-    <input
-      ref={ref}
-      className={cn(
-        'h-10 rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50',
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
-Input.displayName = 'Input';
 
 export const Textarea = forwardRef<
   HTMLTextAreaElement,

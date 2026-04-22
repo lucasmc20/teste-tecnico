@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { UnauthorizedError } from '../../errors/app-error.js';
 import { asyncHandler } from '../../middlewares/async-handler.js';
+import { createSimpleRateLimit } from '../../middlewares/simple-rate-limit.js';
 import { createToken } from './auth.middleware.js';
 import { authService } from './auth.service.js';
 
@@ -18,9 +19,15 @@ const credentialsSchema = z.object({
 });
 
 const router = Router();
+const authRateLimit = createSimpleRateLimit({
+  windowMs: 60_000,
+  max: 10,
+  message: 'Muitas tentativas de autenticação. Aguarde 1 minuto.',
+});
 
 router.post(
   '/register',
+  authRateLimit,
   asyncHandler(async (req, res) => {
     const { username, password } = credentialsSchema.parse(req.body);
     authService.register({ username, password });
@@ -30,6 +37,7 @@ router.post(
 
 router.post(
   '/login',
+  authRateLimit,
   asyncHandler(async (req, res) => {
     const { username, password } = credentialsSchema.parse(req.body);
     if (!authService.validate({ username, password })) {

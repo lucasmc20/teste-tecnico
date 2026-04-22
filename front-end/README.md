@@ -62,7 +62,7 @@ A lista retornada é passada para `<ItemsPanel initialItems={...} />`
 
 ## Login e cadastro
 
-- A tela dedicada de autenticação está em `/login` com abas de `Entrar` e `Cadastrar`.
+- As telas de autenticação estão em `/login` e `/register`.
 - No cadastro, a API já autentica o usuário e devolve token.
 - O front-end guarda token e username em `sessionStorage` para manter a sessão no navegador.
 

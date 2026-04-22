@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../errors/app-error.js';
 import { env } from '../config/env.js';
+import { logger } from '../lib/logger.js';
 
 const formatZod = (error: ZodError) =>
   error.issues.map((issue) => ({
@@ -34,7 +35,7 @@ export const errorHandler = (
 
   // Erros inesperados — evitamos vazar detalhes em produção.
   if (env.nodeEnv !== 'test') {
-    console.error('[unexpected-error]', error);
+    logger.error({ error }, '[unexpected-error] erro inesperado');
   }
   return res.status(500).json({
     error: 'InternalServerError',

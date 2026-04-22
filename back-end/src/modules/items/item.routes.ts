@@ -12,6 +12,9 @@ import type { ItemRepository } from './item.repository.js';
 
 const buildRepository = (): ItemRepository => {
 	if (!env.databaseUrl) {
+		if (env.nodeEnv === 'production') {
+			throw new Error('[items] DATABASE_URL é obrigatório em produção');
+		}
 		logger.info('[items] usando repositório em memória (DATABASE_URL ausente)');
 		return new InMemoryItemRepository();
 	}
@@ -25,6 +28,9 @@ const buildRepository = (): ItemRepository => {
 		logger.info('[items] usando repositório Prisma');
 		return new PrismaItemRepository(prisma as never);
 	} catch (error) {
+		if (env.nodeEnv === 'production') {
+			throw new Error('[items] falha ao inicializar Prisma em produção');
+		}
 		logger.warn({ error }, '[items] falha ao inicializar Prisma, usando memória');
 		return new InMemoryItemRepository();
 	}

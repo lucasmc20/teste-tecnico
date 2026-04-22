@@ -82,6 +82,8 @@ tests/                 # testes de unidade e HTTP (Vitest + Supertest)
 - `POST /auth/login`: autentica com usuário/senha e retorna token JWT.
 - Um usuário admin inicial é carregado por `ADMIN_USER` e `ADMIN_PASS`.
 - Rotas de escrita de itens exigem `Authorization: Bearer <token>`.
+- Senhas são armazenadas com hash (`bcryptjs`) e comparadas de forma segura.
+- Endpoints de autenticação usam rate limit simples para reduzir brute force.
 
 A persistência é em memória — a interface `ItemRepository` isola essa decisão,
 permitindo trocar por Postgres/Prisma sem alterações em services/controllers.

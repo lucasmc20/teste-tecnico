@@ -1,10 +1,31 @@
 import type { ApiErrorPayload, Item, ItemInput } from './types';
 
-export const serverApiBase = () =>
-  process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333';
+const DEFAULT_TIMEOUT_MS = 10_000;
 
-export const clientApiBase = () =>
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333';
+const normalizeBase = (value: string) => value.replace(/\/+$/, '');
+
+const netlifySiteUrl = () => process.env.URL ?? process.env.DEPLOY_PRIME_URL ?? process.env.DEPLOY_URL;
+
+export const serverApiBase = () => {
+  const explicit = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  if (explicit) return normalizeBase(explicit);
+
+  const siteUrl = netlifySiteUrl();
+  if (siteUrl) return `${normalizeBase(siteUrl)}/api`;
+
+  return 'http://localhost:3333';
+};
+
+export const clientApiBase = () => {
+  const explicit = process.env.NEXT_PUBLIC_API_URL;
+  if (explicit) return normalizeBase(explicit);
+
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/api`;
+  }
+
+  return serverApiBase();
+};
 
 export class ApiError extends Error {
   public readonly status: number;
@@ -23,6 +44,7 @@ const resolveBase = () =>
 type FetcherOptions = RequestInit & {
   cache?: RequestCache;
   token?: string | null;
+  timeoutMs?: number;
 };
 
 const parseBody = (text: string): unknown => {
@@ -31,6 +53,54 @@ const parseBody = (text: string): unknown => {
     return JSON.parse(text);
   } catch {
     return text;
+  }
+};
+
+const mergeHeaders = (token?: string | null, headers?: HeadersInit, hasBody?: boolean): HeadersInit => {
+  const result: Record<string, string> = {};
+
+  if (hasBody) {
+    result['Content-Type'] = 'application/json';
+  }
+
+  if (token) {
+    result.Authorization = `Bearer ${token}`;
+  }
+
+  if (!headers) return result;
+
+  if (headers instanceof Headers) {
+    headers.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
+  }
+
+  if (Array.isArray(headers)) {
+    for (const [key, value] of headers) {
+      result[key] = value;
+    }
+    return result;
+  }
+
+  return { ...result, ...headers };
+};
+
+const doRequest = async (path: string, options: FetcherOptions = {}) => {
+  const { token, timeoutMs = DEFAULT_TIMEOUT_MS, ...rest } = options;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(`${resolveBase()}${path}`, {
+      ...rest,
+      signal: rest.signal ?? controller.signal,
+      headers: mergeHeaders(token, rest.headers, Boolean(rest.body)),
+    });
+    const text = await res.text();
+    return { res, body: parseBody(text) };
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 
@@ -48,20 +118,9 @@ const toApiPayload = (body: unknown): ApiErrorPayload | undefined => {
 };
 
 const request = async <T>(path: string, options: FetcherOptions = {}): Promise<T> => {
-  const { token, ...rest } = options;
-  const res = await fetch(`${resolveBase()}${path}`, {
-    ...rest,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(rest.headers ?? {}),
-    },
-  });
+  const { res, body } = await doRequest(path, options);
 
   if (res.status === 204) return undefined as T;
-
-  const text = await res.text();
-  const body = parseBody(text);
 
   if (!res.ok) {
     const payload = toApiPayload(body);
@@ -96,17 +155,11 @@ const listRaw = async (
   if (params.limit) qs.set('limit', String(params.limit));
   const query = qs.toString() ? `?${qs}` : '';
 
-  const res = await fetch(`${resolveBase()}/items${query}`, {
+  const { res, body } = await doRequest(`/items${query}`, {
     cache: 'no-store',
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.token ? { Authorization: `Bearer ${init.token}` } : {}),
-      ...(init?.headers ?? {}),
-    },
   });
-  const text = await res.text();
-  const body = parseBody(text);
+
   if (!res.ok) {
     const payload = toApiPayload(body);
     throw new ApiError(
