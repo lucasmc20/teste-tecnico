@@ -4,35 +4,42 @@ import { test, expect } from '@playwright/test';
 // As variáveis ADMIN_USER / ADMIN_PASS devem estar configuradas no back-end.
 const ADMIN = { user: process.env.ADMIN_USER ?? 'admin', pass: process.env.ADMIN_PASS ?? 'admin' };
 
+/** Faz login via página /login e aguarda redirecionamento para o painel. */
+async function loginAs(page: import('@playwright/test').Page, user: string, pass: string) {
+  await page.goto('/login');
+  await page.getByLabel(/usuário/i).fill(user);
+  await page.getByLabel(/senha/i).fill(pass);
+  await page.getByRole('button', { name: /entrar/i }).click();
+  await expect(page.getByRole('heading', { name: /itens cadastrados/i })).toBeVisible();
+}
+
 test.describe('Fluxo completo de itens', () => {
-  test('exibe lista na página inicial (SSR)', async ({ page }) => {
+  test('redireciona para login ao acessar / sem autenticação', async ({ page }) => {
     await page.goto('/');
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByRole('heading', { name: /entre para acessar/i })).toBeVisible();
+  });
+
+  test('exibe lista após login bem-sucedido', async ({ page }) => {
+    await loginAs(page, ADMIN.user, ADMIN.pass);
     await expect(page.getByRole('heading', { name: /itens cadastrados/i })).toBeVisible();
   });
 
   test('login com credenciais inválidas mostra erro', async ({ page }) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: /entrar/i }).click();
+    await page.goto('/login');
     await page.getByLabel(/usuário/i).fill('errado');
     await page.getByLabel(/senha/i).fill('errada');
-    await page.getByRole('button', { name: /entrar/i }).last().click();
+    await page.getByRole('button', { name: /entrar/i }).click();
     await expect(page.getByText(/credenciais inválidas/i)).toBeVisible();
   });
 
   test('CRUD completo — criar, editar e excluir', async ({ page }) => {
-    await page.goto('/');
-
-    // Login
-    await page.getByRole('button', { name: /entrar/i }).click();
-    await page.getByLabel(/usuário/i).fill(ADMIN.user);
-    await page.getByLabel(/senha/i).fill(ADMIN.pass);
-    await page.getByRole('button', { name: /entrar/i }).last().click();
-    await expect(page.getByRole('button', { name: /sair/i })).toBeVisible();
+    await loginAs(page, ADMIN.user, ADMIN.pass);
 
     // Criar item
     const itemName = `Playwright Item ${Date.now()}`;
     await page.getByLabel(/nome/i).fill(itemName);
-    await page.getByLabel(/preço/i).fill('99.9');
+    await page.getByLabel(/preço/i).fill('9990');
     await page.getByLabel(/estoque/i).fill('5');
     await page.getByRole('button', { name: /adicionar/i }).click();
     await expect(page.getByText(itemName)).toBeVisible();
@@ -52,7 +59,7 @@ test.describe('Fluxo completo de itens', () => {
   });
 
   test('busca com debounce filtra a lista', async ({ page }) => {
-    await page.goto('/');
+    await loginAs(page, ADMIN.user, ADMIN.pass);
     await page.getByPlaceholder(/buscar/i).fill('xyz_inexistente_123');
     // Aguarda debounce + request
     await page.waitForTimeout(600);
