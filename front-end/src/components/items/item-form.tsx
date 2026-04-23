@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Field, Textarea } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { itemSchema, ItemFormValues } from '@/lib/schemas';
@@ -132,18 +133,12 @@ export function ItemForm({
                 control={control}
                 name="price"
                 render={({ field }) => (
-                  <Input
+                  <CurrencyInput
                     id="price"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    min="0"
-                    placeholder="0,00"
-                    value={Number.isFinite(field.value) ? field.value : ''}
-                    onChange={(e) => {
-                      const next = e.target.valueAsNumber;
-                      field.onChange(Number.isNaN(next) ? 0 : next);
-                    }}
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
                   />
                 )}
               />

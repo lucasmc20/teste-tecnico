@@ -22,7 +22,7 @@ export function useItems({ initialData, search, page = 1, limit = 20 }: UseItems
     queryKey: [...ITEMS_KEY, { search, page, limit }],
     queryFn: () => itemsApi.list({ search, page, limit }),
     // initialData só faz sentido na primeira página sem filtro
-    initialData: initialData && !search && page === 1
+    initialData: initialData && initialData.length > 0 && !search && page === 1
       ? { items: initialData, total: initialData.length, page: 1, limit }
       : undefined,
     placeholderData: (prev) => prev,

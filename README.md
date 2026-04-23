@@ -1,9 +1,9 @@
 # Teste Técnico — Gestão de Itens
 
 Aplicação full-stack desenvolvida como teste técnico para vaga de desenvolvedor
-front-end com atuação também no back-end. O objetivo é um CRUD simples de itens
-(produtos) consumindo uma API própria, com SSR na listagem inicial e tratamento
-consistente de loading, erro e sucesso.
+front-end com atuação também no back-end. O objetivo é um CRUD completo de itens
+(produtos) consumindo uma API própria, com autenticação JWT, proteção de rotas,
+máscara de moeda BRL e tratamento consistente de loading, erro e sucesso.
 
 ## Arquitetura
 
@@ -50,10 +50,13 @@ docker compose up --build
 
 Usuário inicial no `docker-compose.yml`:
 
-- usuário: `admin_local`
-- senha: `secret`
+- usuário: `teste-tecnico`
+- senha: `senha.123`
 
 Também é possível criar novos usuários pela rota `/register`.
+
+Ao subir pela primeira vez, o back-end popula automaticamente 7 itens de exemplo
+(`prisma/seed.mjs`) para que a listagem já esteja preenchida.
 
 ## Deploy no Netlify (Front + Back no mesmo site)
 
@@ -108,40 +111,41 @@ cd front-end && npm test     # Vitest + Testing Library (formulário)
   e os caminhos de erro.
 
 ### Front-end
-- **App Router** com **Server Component** na página inicial — o fetch a `/items`
-  acontece no servidor antes do HTML ser enviado.
-- **React Query** no cliente hidrata-se com os dados vindos do SSR via
-  `initialData`. Mutations atualizam o cache localmente (otimista), sem
-  refetch agressivo, para manter a UI consistente.
+- **App Router** com proteção de rotas via `AuthGuard` (Client Component):
+  acessar `/` sem sessão válida redireciona automaticamente para `/login?next=/`.
+- **React Query** gerencia estado remoto. Mutations atualizam o cache localmente,
+  sem refetch agressivo, mantendo a UI consistente.
+- **CurrencyInput** com máscara BRL automática (ex.: `1.234,56`) — dígitos são
+  acumulados como centavos e formatados em tempo real via `Intl.NumberFormat`.
 - **Tailwind** para estilização e responsividade (grid `md:grid-cols-2`,
-  cartões fluidos, tipografia Inter via `next/font`).
+  cartões fluidos).
 - **Toast provider** com Context API dá feedback imediato de sucesso/erro
   para cada operação.
-- **Dois endpoints de base** (`API_URL` para SSR, `NEXT_PUBLIC_API_URL` para o
-  navegador) permitem que o front-end em Docker fale com o backend pela rede
-  interna e, ao mesmo tempo, o browser acesse via `localhost`.
+- **Dois endpoints de base** (`API_URL` para SSR, `NEXT_PUBLIC_API_URL` injetado
+  em tempo de build via `ARG` no Dockerfile) permitem que o front-end em Docker
+  fale com o backend pela rede interna e o browser acesse via `localhost`.
 
-### SSR — como foi implementado
+### Fluxo de autenticação
 
-1. `src/app/page.tsx` é um Server Component com
-   `export const dynamic = 'force-dynamic'` (renderizado a cada request).
-2. Dentro dele, chamamos `itemsApi.list()` — um fetcher isomórfico que usa
-   `process.env.API_URL` quando `typeof window === 'undefined'`.
-3. Tratamos falhas do SSR graciosamente: em vez de quebrar a página, exibimos
-   um aviso e deixamos o client-side tentar novamente.
-4. Os dados retornados são passados como `initialItems` para o
-   `<ItemsPanel>` (Client Component). Dentro dele, `useItems({ initialData })`
-   alimenta o cache do React Query — o usuário vê conteúdo já pronto no
-   primeiro paint e as operações subsequentes acontecem via mutations.
-5. A separação cliente/servidor é explícita: tudo que usa hooks (`'use client'`)
-   está em `components/items/*` e `providers/*`; a página mantém-se server-only.
+1. `src/app/page.tsx` renderiza o painel envolto em `<AuthGuard>`.
+2. `AuthGuard` lê o token do `sessionStorage` via `useAuth()`. Se ausente ou
+   expirado, redireciona para `/login?next=%2F`.
+3. Após login bem-sucedido, `/login` devolve o usuário à rota original (`next`).
+4. O token JWT é armazenado apenas em `sessionStorage` (sessão do navegador) —
+   ao fechar a aba, a sessão é encerrada automaticamente.
+5. A separação de responsabilidades segue SRP/OCP: `AuthGuard` cuida só de
+   acesso; `AuthProvider` cuida de login/logout/registro; as páginas não
+   conhecem detalhes de autenticação.
 
 ### Diferenciais aplicados
 
 - TypeScript estrito nos dois projetos
 - Testes automatizados (Vitest + Supertest no back, Testing Library no front)
 - React Query para estado remoto
-- Docker + docker-compose
+- `AuthGuard` com SRP/OCP — proteção de rotas sem acoplar lógica de auth às páginas
+- `CurrencyInput` com máscara BRL reutilizável
+- Seed idempotente de dados de exemplo (`prisma/seed.mjs`)
+- Docker + docker-compose com `prisma db push` + seed automático no startup
 - Estrutura em camadas no back-end
 
 ### Subir com Docker Compose

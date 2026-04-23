@@ -22,9 +22,10 @@ services:
       PORT: 3333
       CORS_ORIGIN: http://localhost:3000
       NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/testdb
       JWT_SECRET: ${JWT_SECRET:-troque-em-producao}
-      ADMIN_USER: ${ADMIN_USER:-admin_local}
-      ADMIN_PASS: ${ADMIN_PASS:-secret}
+      ADMIN_USER: ${ADMIN_USER:-teste-tecnico}
+      ADMIN_PASS: ${ADMIN_PASS:-senha.123}
     ports:
       - "3333:3333"
     depends_on:
@@ -32,7 +33,10 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./front-end
+    build:
+      context: ./front-end
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3333
     container_name: teste-tecnico-frontend
     environment:
       API_URL: http://backend:3333
