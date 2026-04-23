@@ -27,7 +27,7 @@ describe('ItemForm', () => {
     await user.type(screen.getByLabelText(/nome/i), 'Cadeira Gamer');
 
     await user.clear(screen.getByLabelText(/preço/i));
-    await user.type(screen.getByLabelText(/preço/i), '1200.5');
+    await user.type(screen.getByLabelText(/preço/i), '120050');
 
     await user.clear(screen.getByLabelText(/estoque/i));
     await user.type(screen.getByLabelText(/estoque/i), '3');
